@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include "uthread.h"
 
 #define THREAD_NUM 2
@@ -7,9 +8,10 @@ void* routine(void* arg)
 {
     int err;
     const char* msg = (const char*)arg;
-    for (int i = 0; i < 50; i++)
+    for (int i = 0; i < 1000; i++)
     {
         printf("[%d][%d]: %s\n", uthread_self(), i, msg);
+        // sleep(1);
         // printf("[%d]: yielding to next thread\n", uthread_self());
         // uthread_yield();
         // printf("[%d]: someone yielded to me\n", uthread_self());

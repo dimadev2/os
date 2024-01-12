@@ -9,7 +9,7 @@ static int init_uthread();
 static _uthread_info* init_thread(uthread_routine routine, void* arg);
 static int finalize_thread(_uthread_info* thread);
 static int put_thread(_uthread_info* thread, uthread_t* tid);
-static void start_routine(void* arg);
+static void *start_routine(void* arg);
 static void schedule();
 
 #if UTHREAD_YIELD_MODE == TIMED
@@ -37,7 +37,7 @@ int uthread_create(uthread_t *tid, uthread_routine routine, void *arg)
 
     while (!__sync_bool_compare_and_swap(&thread_list_sync, 0, 1))
     {
-        uthread_yield();
+        // uthread_yield();
     }
 
     _uthread_info* thread = init_thread(routine, arg);
@@ -71,7 +71,7 @@ int uthread_join(uthread_t tid, void **retval)
     _uthread_info* thread = thread_list[tid];
     while (!thread->is_completed)
     {
-        uthread_yield();
+        // uthread_yield();
     }
 
     *retval = thread->retval;
@@ -86,7 +86,7 @@ int uthread_join(uthread_t tid, void **retval)
 void uthread_yield()
 {
 #if UTHREAD_YIELD_MODE == TIMED
-    raise(SIGALRM);
+    // raise(SIGALRM);
 #else
     schedule();
 #endif
@@ -131,10 +131,21 @@ int init_uthread()
 #if UTHREAD_YIELD_MODE == TIMED
 int init_timed_yielding()
 {
+    // struct sigaction action;
+    // action.sa_sigaction = schedule;
+    // sigemptyset(&action.sa_mask);
+    // sigaddset(&action.sa_mask, SIGALRM);
+    // sigaction(SIGALRM, &action, NULL);
+
     struct sigaction action;
-    action.sa_sigaction = schedule;
-    sigemptyset(&action.sa_mask);
-    sigaddset(&action.sa_mask, SIGALRM);
+    memset(&action, 0, sizeof(action));
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGALRM);
+
+    action.sa_mask = set;
+    action.sa_handler = schedule;
+
     sigaction(SIGALRM, &action, NULL);
 
     struct itimerval interval;
@@ -142,6 +153,8 @@ int init_timed_yielding()
     interval.it_value.tv_usec = UTHREAD_TIMED_YIELDING_DELAY;
     interval.it_interval = interval.it_value;
     setitimer(ITIMER_REAL, &interval, NULL);
+
+    // alarm(1); //!!!!
 
     return 0;
 }
@@ -178,7 +191,7 @@ _uthread_info *init_thread(uthread_routine routine, void *arg)
         // perror
         return _INIT_THREAD_ERROR;
     }
-    makecontext(&thread->ctx, start_routine, 1, thread);
+    makecontext(&thread->ctx, (void (*)()) start_routine, 1, thread);
 
     return thread;
 }
@@ -215,7 +228,7 @@ int put_thread(_uthread_info *thread, uthread_t *tid)
     return -1;
 }
 
-void start_routine(void* arg)
+void *start_routine(void* arg)
 {
     _uthread_info* thread = (_uthread_info*)arg;
     thread->retval = thread->routine(thread->arg);
@@ -224,13 +237,16 @@ void start_routine(void* arg)
 
     while (!thread->is_joined)
     {
-        uthread_yield();
+        // uthread_yield();
     }
 
+    // return;
     while (1)
     {
         // uthread_yield();
     }
+
+    return NULL;
 }
 
 void schedule()
@@ -247,6 +263,9 @@ void schedule()
     {
         return;
     }
+
+    // alarm(1); //!!!
+
     int err = swapcontext(&current->ctx, &next->ctx);
     if (err == -1)
     {
@@ -261,7 +280,7 @@ int garbage_collector()
 {
     while (!__sync_bool_compare_and_swap(&thread_list_sync, 0, 1))
     {
-        uthread_yield();
+        // uthread_yield();
     }
 
     for (int i = 0; i < UTHREAD_MAXTHREADNUM; i++)

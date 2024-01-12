@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <ucontext.h>
@@ -22,7 +23,7 @@
 #define UTHREAD_YIELD_MODE TIMED
 
 #if UTHREAD_YIELD_MODE == TIMED
-    #define UTHREAD_TIMED_YIELDING_DELAY 100
+    #define UTHREAD_TIMED_YIELDING_DELAY 500
 #endif
 
 #define _INIT_THREAD_ERROR ((_uthread_info*)-1)
