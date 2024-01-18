@@ -148,13 +148,13 @@ int init_timed_yielding()
 
     sigaction(SIGALRM, &action, NULL);
 
-    struct itimerval interval;
-    interval.it_value.tv_sec = 0;
-    interval.it_value.tv_usec = UTHREAD_TIMED_YIELDING_DELAY;
-    interval.it_interval = interval.it_value;
-    setitimer(ITIMER_REAL, &interval, NULL);
+    // struct itimerval interval;
+    // interval.it_value.tv_sec = 0;
+    // interval.it_value.tv_usec = UTHREAD_TIMED_YIELDING_DELAY;
+    // interval.it_interval = interval.it_value;
+    // setitimer(ITIMER_REAL, &interval, NULL);
 
-    // alarm(1); //!!!!
+    alarm(1); //!!!!
 
     return 0;
 }
@@ -264,7 +264,7 @@ void schedule()
         return;
     }
 
-    // alarm(1); //!!!
+    alarm(1); //!!!
 
     int err = swapcontext(&current->ctx, &next->ctx);
     if (err == -1)

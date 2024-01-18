@@ -1,25 +1,25 @@
 #include <stdio.h>
 #include <pthread.h>
-#include "spinlock.h"
+#include "mutex.h"
 
 #define N 10000000
 
 int sum = 0;
-spin_t spin;
+mutex_t mutex;
 
 void* routine(void* arg)
 {
     for (int i = 0; i < N; i++)
     {
-        spin_lock(&spin);
+        mutex_lock(&mutex);
         sum++;
-        spin_unlock(&spin);
+        mutex_unlock(&mutex);
     }
 }
 
 int main(void)
 {
-    spin_init(&spin);
+    mutex_init(&mutex);
     pthread_t t1, t2;
     pthread_create(&t1, NULL, routine, NULL);
     pthread_create(&t2, NULL, routine, NULL);

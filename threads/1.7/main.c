@@ -4,30 +4,41 @@
 
 #define THREAD_NUM 2
 
+typedef struct Arg {
+    const char* msg;
+    int wait_time;
+}
+thread_arg;
+
 void* routine(void* arg)
 {
     int err;
-    const char* msg = (const char*)arg;
-    for (int i = 0; i < 1000; i++)
+    thread_arg* a = (thread_arg*)arg;
+    int delay = a->wait_time;
+    const char* msg = a->msg;
+    for (int i = 0; i < 5; i++)
     {
         printf("[%d][%d]: %s\n", uthread_self(), i, msg);
-        // sleep(1);
+        sleep(delay);
         // printf("[%d]: yielding to next thread\n", uthread_self());
         // uthread_yield();
         // printf("[%d]: someone yielded to me\n", uthread_self());
     }
 
-    return arg;
+    return (void*)(a->msg);
 }
 
 int main(void)
 {
     uthread_t tid[THREAD_NUM];
-    const char* args[] = { "hello", "world" };
+    thread_arg args[] = {
+        (thread_arg){ "hello", 1 },
+        (thread_arg){ "world", 3 }
+    };
     int err;
     for (int i = 0; i < THREAD_NUM; i++)
     {
-        err = uthread_create(tid + i, routine, (void*)args[i]);
+        err = uthread_create(tid + i, routine, (void*)(args + i));
         if (err == -1)
         {
             // perror
